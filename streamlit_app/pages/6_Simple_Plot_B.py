@@ -58,6 +58,24 @@ else:
 opt_col, plot_col = st.columns([1, 3], gap="large")
 
 with opt_col:
+    st.subheader("Datenbereich (a:b)")
+    n_total = len(df)
+    slice_a = st.number_input(
+        "Start a", value=0, step=1, min_value=-n_total, max_value=n_total,
+        help="Erster Index (inklusive). Negativ erlaubt (Python-Slice-Semantik).",
+    )
+    slice_b = st.number_input(
+        "Ende b", value=-1, step=1, min_value=-n_total, max_value=n_total,
+        help="Letzter Index (exklusiv). -1 bedeutet 'bis zum Ende', so dass alle Daten geplottet werden.",
+    )
+    # Slice anwenden: -1 als 'bis zum Ende' interpretieren, damit der Default 0:-1 die ganzen Daten zeigt.
+    b_eff = n_total if slice_b == -1 else slice_b
+    df = df.iloc[slice_a:b_eff].reset_index(drop=True)
+    if len(df) == 0:
+        st.warning("Der gewählte Bereich ist leer. Bitte a/b anpassen.")
+        st.stop()
+    st.caption(f"Ausgewählt: {len(df)} von {n_total} Datenpunkten")
+
     st.subheader("Styling")
     color = st.color_picker("Linienfarbe", "#d62728")
     fig_w = st.slider("Breite", 4, 16, 10)
