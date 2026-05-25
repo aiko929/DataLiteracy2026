@@ -50,7 +50,7 @@ else:
     time_col = None if time_choice == "(keine)" else time_choice
     if time_col is not None:
         try:
-            df[time_col] = pd.to_datetime(df[time_col])
+            df[time_col] = pd.to_numeric(df[time_col])
         except Exception:
             st.warning(f"'{time_col}' nicht in Datetime umwandelbar.")
 

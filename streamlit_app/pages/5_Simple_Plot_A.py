@@ -10,7 +10,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from data_loader import load_example_csv  # noqa: E402
 
-st.set_page_config(page_title="Simple Plot", page_icon="📉", layout="wide")
+st.set_page_config(page_title="Simple Plot A", page_icon="📉", layout="wide")
 st.title("📉 Einfaches Liniendiagramm mit Ausreißern")
 
 st.caption(
@@ -50,7 +50,7 @@ else:
     time_col = None if time_choice == "(keine)" else time_choice
     if time_col is not None:
         try:
-            df[time_col] = pd.to_datetime(df[time_col])
+            df[time_col] = pd.to_numeric(df[time_col])
         except Exception:
             st.warning(f"'{time_col}' nicht in Datetime umwandelbar.")
 
