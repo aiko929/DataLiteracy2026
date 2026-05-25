@@ -31,4 +31,10 @@ st.markdown(
     """
 )
 
+st.markdown(
+    "**BI-Vital Sensor:** Eigene Messungen kannst du mit der "
+    "[BI-Vital Web-Toolbox](https://bivital.eu/docs/webtools/web-toolbox/) "
+    "aufzeichnen und als CSV exportieren."
+)
+
 st.info("Wähle links eine Seite aus, um loszulegen.")
