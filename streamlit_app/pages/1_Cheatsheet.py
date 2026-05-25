@@ -50,9 +50,7 @@ elif source == "CSV-Datei hochladen":
     uploaded = st.sidebar.file_uploader("CSV-Datei", type=["csv"])
     if uploaded is not None:
         df = pd.read_csv(uploaded, sep=sep, skiprows=2)
-        print(df.columns)
-        df[" Heartrate [bpm]"] = pd.to_numeric(df[" Heartrate [bpm]"], errors="coerce")
-
+        df = df.apply(pd.to_numeric, errors='coerce')
 
 if df is None or df.empty:
     st.info("Bitte zunächst Daten in der Sidebar bereitstellen.")

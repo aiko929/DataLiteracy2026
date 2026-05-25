@@ -44,7 +44,7 @@ else:
     df = pd.read_csv(uploaded, skiprows=2)
     df = df.apply(pd.to_numeric, errors='coerce')
     value_col = st.sidebar.selectbox(
-        "Wertespalte", df.columns
+        "Wertespalte", df.select_dtypes(include=np.number).columns
     )
     time_choice = st.sidebar.selectbox("Zeitspalte (optional)", ["(keine)"] + list(df.columns))
     time_col = None if time_choice == "(keine)" else time_choice
