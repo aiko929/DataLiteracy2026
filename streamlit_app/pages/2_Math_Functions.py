@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
@@ -63,9 +65,6 @@ with opt_col:
         [5, 10, 25, 33, 50, 66, 75, 90, 95, 99],
         default=[25, 50, 75],
     )
-    fisher = st.checkbox("Fisher-Definition Kurtosis (Excess)", value=True)
-    bias = st.checkbox("Biased estimator (Schiefe/Kurtosis)", value=True)
-
 with res_col:
     st.subheader("Statistische Kennwerte")
     c1, c2, c3, c4 = st.columns(4)
@@ -80,8 +79,8 @@ with res_col:
     c7.metric("n", f"{len(sample)}")
 
     cA, cB = st.columns(2)
-    cA.metric("Kurtosis", f"{kurtosis(sample, fisher=fisher, bias=bias):.4f}")
-    cB.metric("Schiefe", f"{skew(sample, bias=bias):.4f}")
+    cA.metric("Kurtosis", f"{kurtosis(sample):.4f}")
+    cB.metric("Schiefe", f"{skew(sample):.4f}")
 
     if qs:
         quantiles = np.percentile(sample, qs)
@@ -89,32 +88,66 @@ with res_col:
 
 # ==================== Block 2: T-Test ====================
 st.divider()
-st.header("T-Test gegen zweite Stichprobe")
+st.header("T-Test zweier Stichproben")
+
+
+def sample_input(label: str, key: str, default_mu: float, default_sigma: float,
+                 default_seed: int, default_text: str) -> np.ndarray:
+    st.markdown(f"**{label}**")
+    src = st.radio(
+        "Quelle",
+        ["Zufall (normal)", "Manuelle Eingabe", "CSV-Datei"],
+        key=f"src_{key}",
+    )
+    if src == "Zufall (normal)":
+        n = st.slider("n", 5, 5000, 100, key=f"n_{key}")
+        mu = st.number_input("µ", value=default_mu, key=f"mu_{key}")
+        sigma = st.number_input("σ", value=default_sigma, min_value=0.0, key=f"sigma_{key}")
+        seed = st.number_input("Random Seed", value=default_seed, step=1, key=f"seed_{key}")
+        rng = np.random.default_rng(int(seed))
+        return rng.normal(mu, sigma, n)
+    if src == "CSV-Datei":
+        uploaded = st.file_uploader("CSV hochladen", type=["csv"], key=f"file_{key}")
+        if uploaded is None:
+            st.info("Bitte CSV-Datei hochladen.")
+            st.stop()
+        df = pd.read_csv(uploaded, skiprows=2)
+        df = df.apply(pd.to_numeric, errors='coerce')
+        numcols = df.select_dtypes(include=np.number).columns.tolist()
+        if not numcols:
+            st.error("Keine numerischen Spalten in der CSV gefunden.")
+            st.stop()
+        col = st.selectbox("Spalte", numcols, key=f"col_{key}")
+        return df[col].dropna().to_numpy()
+    txt = st.text_input("Werte (Komma-getrennt)", value=default_text, key=f"txt_{key}")
+    try:
+        return np.array([float(v.strip()) for v in txt.split(",") if v.strip()])
+    except ValueError:
+        st.error("Bitte Zahlen.")
+        st.stop()
+
 
 t_opt, t_res = st.columns([1, 2], gap="large")
 
 with t_opt:
-    st.subheader("Zweite Stichprobe")
-    mode2 = st.radio("Quelle", ["Zufall (normal)", "Manuelle Eingabe"])
-    if mode2 == "Zufall (normal)":
-        n2 = st.slider("n", 5, 5000, 100, key="n2")
-        mu2 = st.number_input("µ2", value=5.0)
-        sigma2 = st.number_input("σ2", value=2.0, min_value=0.0)
-        seed2 = st.number_input("Random Seed 2", value=0, step=1)
-        rng2 = np.random.default_rng(int(seed2))
-        sample2 = rng2.normal(mu2, sigma2, n2)
-    else:
-        txt2 = st.text_input("Werte (Komma-getrennt)", value="4,5,6,5,4,5,6,7")
-        try:
-            sample2 = np.array([float(v.strip()) for v in txt2.split(",") if v.strip()])
-        except ValueError:
-            st.error("Bitte Zahlen.")
-            st.stop()
+    st.subheader("Stichproben")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        sample_a = sample_input("Stichprobe A", "a", 70.0, 10.0, 42, "1,2,3,4,5,6,7,8,9")
+    with col_b:
+        sample_b = sample_input("Stichprobe B", "b", 5.0, 2.0, 0, "4,5,6,5,4,5,6,7")
     equal_var = st.checkbox("equal_var (Student-t statt Welch-t)", value=True)
 
 with t_res:
+    st.subheader("Stichproben-Kennwerte")
+    sa, sb = st.columns(2)
+    sa.metric("Mittelwert A", f"{np.mean(sample_a):.4f}")
+    sa.metric("Standardabweichung A", f"{np.std(sample_a, ddof=1):.4f}")
+    sb.metric("Mittelwert B", f"{np.mean(sample_b):.4f}")
+    sb.metric("Standardabweichung B", f"{np.std(sample_b, ddof=1):.4f}")
+
     st.subheader("Ergebnis")
-    result = ttest_ind(sample, sample2, equal_var=equal_var)
+    result = ttest_ind(sample_a, sample_b, equal_var=equal_var)
     c1, c2, c3 = st.columns(3)
     c1.metric("t-Statistik", f"{result.statistic:.4f}")
     c2.metric("p-Wert", f"{result.pvalue:.4f}")
@@ -125,6 +158,26 @@ with t_res:
     else:
         st.info("p ≥ 0.05 – kein signifikanter Unterschied der Mittelwerte.")
 
+    with st.expander("Interpretation der T-Test-Ergebnisse"):
+        st.markdown(
+            "- **t-Wert:** Ein hoher t-Wert weist auf einen großen Unterschied "
+            "zwischen den Mittelwerten der beiden Gruppen hin.\n"
+            "- **p-Wert:** Zeigt an, wie wahrscheinlich es ist, dass der "
+            "beobachtete Unterschied nur durch Zufall entstanden ist.\n"
+            "  - **p < 0.05:** Der Unterschied ist statistisch signifikant → "
+            "Es gibt starke Hinweise, dass die Mittelwerte verschieden sind.\n"
+            "  - **p > 0.05:** Der Unterschied ist nicht signifikant → "
+            "Es gibt keine ausreichenden Beweise, dass sich die Mittelwerte "
+            "wirklich unterscheiden.\n"
+            "- **Freiheitsgrade df:** Anzahl der Datenpunkte in beiden "
+            "Stichproben minus 2 – höhere Freiheitsgrade bedeuten, dass der "
+            "Test stabiler ist."
+        )
+
 with st.expander("Stichprobenvorschau"):
-    st.write(f"sample: n = {len(sample)}")
-    st.dataframe(pd.DataFrame({"sample": sample}).head(20), use_container_width=True)
+    preview = pd.DataFrame({
+        "Stichprobe A": pd.Series(sample_a),
+        "Stichprobe B": pd.Series(sample_b),
+    })
+    st.write(f"A: n = {len(sample_a)}, B: n = {len(sample_b)}")
+    st.dataframe(preview.head(20), use_container_width=True)

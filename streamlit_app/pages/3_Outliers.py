@@ -91,7 +91,12 @@ with opt_col:
     pct = mask.mean() * 100
     st.write(f"**{pct:.2f} %** liegen in ±{k}·σ")
     st.write(f"Bereich: **{lower:.2f}** … **{upper:.2f}**")
-    st.caption("1σ≈68 % · 2σ≈95 % · 3σ≈99,7 %")
+    st.markdown(
+        "- **68 %** der Daten liegen innerhalb **einer** Standardabweichung vom Mittelwert\n"
+        "- **95 %** der Werte liegen innerhalb von **zwei** Standardabweichungen\n"
+        "- **99,7 %** der Werte liegen innerhalb von **drei** Standardabweichungen\n"
+        "- &rArr; Alle Datenpunkte, die außerhalb des erwarteten Bereichs liegen (d.h. außerhalb von drei Standardabweichungen vom Mittelwert), werden als Ausreißer betrachtet."
+    )
 
     st.subheader("Korrektur")
     method = st.selectbox(

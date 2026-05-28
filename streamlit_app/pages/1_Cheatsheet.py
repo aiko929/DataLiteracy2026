@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import sys
 from pathlib import Path
@@ -7,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from data_loader import load_example_csv  # noqa: E402
+from data_loader import load_example_csv
 
 st.set_page_config(page_title="Cheatsheet", page_icon="📒", layout="wide")
 st.title("📒 Pandas Cheatsheet (interaktiv)")
